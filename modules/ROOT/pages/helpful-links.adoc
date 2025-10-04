@@ -1,0 +1,12 @@
+= Helpful Links
+
+Here are some helpful links to external resources.
+
+== Hosting and Services
+
+* https://dash.cloudflare.com[Cloudflare] - DNS, CDN, and security services.
+* https://cloud.digitalocean.com[Digital Ocean] - Cloud hosting provider.
+
+== Development
+
+* https://github.com[GitHub] - Git repository hosting.

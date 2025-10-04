@@ -1,0 +1,184 @@
+= Initial Debian Server Setup
+
+This guide covers the essential first steps to configure a new Debian server.
+
+== 1. Create a Non-Root User
+
+Running everything as root is a security risk. The first step is to create a non-root user with `sudo` privileges for administrative tasks. 
+
+. Create a new user:
++
+[source,bash]
+----
+adduser username
+----
++
+You will be prompted to set a password and some user information.
+
+. Add the new user to the `sudo` group:
++
+[source,bash]
+----
+usermod -aG sudo username
+----
+
+Switch to the new user:
++
+[source,bash]
+----
+su - username
+----
+
+== 2. Add Public SSH Key
+
+Using SSH keys is a more secure alternative to password-based authentication.
+
+. On your local machine, copy your public SSH key. It's usually located in `~/.ssh/id_rsa.pub`. If you don't have one, you can generate it with:
++
+[source,bash]
+----
+ssh-keygen -t rsa -b 4096
+----
+
+. Now, on the server as the new non-rootuser, create the `.ssh` directory and add your public key:
++
+[source,bash]
+----
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+echo 'your_public_ssh_key_string' >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+----
++
+Replace `your_public_ssh_key_string` with your actual public key.
+
+. Now you can log out and log back in as the new user without a password.
+
+. Disable root login and password authentication:
++
+[source,bash]
+----
+sudo vim /etc/ssh/sshd_config
+----
++
+Make sure the following lines are present and set correctly:
++
+[source,text]
+----
+PermitRootLogin no
+PasswordAuthentication no
+----
++
+Restart the SSH service to apply the changes:
++
+[source,bash]
+----
+sudo systemctl restart sshd
+----
+
+== 3. Configure Firewall with UFW
+
+UFW (Uncomplicated Firewall) is a user-friendly interface for managing firewall rules.
+
+. Install UFW:
++
+[source,bash]
+----
+sudo apt update
+sudo apt install ufw
+----
+
+. Allow SSH connections. If you don't do this, you will be locked out of your server after enabling the firewall.
++
+[source,bash]
+----
+sudo ufw allow OpenSSH
+----
+
+. Enable the firewall:
++
+[source,bash]
+----
+sudo ufw enable
+----
++
+You will be prompted to confirm. Type `y` and press Enter.
+
+. (Optional) Allow other services, for example HTTP and HTTPS:
++
+[source,bash]
+----
+sudo ufw allow http
+sudo ufw allow https
+----
+
+. Check the firewall status:
++
+[source,bash]
+----
+sudo ufw status
+----
+
+== 4. System Updates and Essential Packages
+
+Keep your system up-to-date and install some essential packages for security.
+
+. Update and upgrade all packages:
++
+[source,bash]
+----
+sudo apt update && sudo apt upgrade -y
+----
+
+. Install `fail2ban` to protect against brute-force attacks:
++
+[source,bash]
+----
+sudo apt install fail2ban -y
+----
++
+`fail2ban` will automatically start and protect SSH and other services.
+
+== 5. Managing Services with systemd
+
+`systemd` is the service manager used in Debian. You can use it to manage services and ensure they start on boot.
+
+=== Ensuring Services Start on Boot
+
+To enable a service to start automatically when the server boots, use the `systemctl enable` command.
+
+. For example, to enable the `nginx` web server to start on boot, you would run:
++
+[source,bash]
+----
+sudo systemctl enable nginx
+----
++
+This creates a symbolic link that `systemd` uses to start the service at the correct time.
+
+. If you want to disable a service from starting on boot, you can use:
++
+[source,bash]
+----
+sudo systemctl disable nginx
+----
+
+=== Checking Service Status
+
+You can check the status of all running services or a specific service.
+
+. To list all active services, use:
++
+[source,bash]
+----
+sudo systemctl list-units --type=service --state=running
+----
+
+. To check the status of a specific service, use the `systemctl status` command. For example, to check the status of `sshd`:
++
+[source,bash]
+----
+sudo systemctl status sshd
+----
++
+This will show you if the service is active, its PID, memory usage, and the latest log entries.
